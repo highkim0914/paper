@@ -1,101 +1,16 @@
-# DASH-NS3
-A simulation model for HTTP-based adaptive streaming applications
+## NS-3을 통한 QUIC 프로토콜의 비디오 스트리밍 성능
+기존 DASH 모듈을 사용한 ["Simulation Framework for HTTP-Based Adaptive Streaming Application"](https://dl.acm.org/doi/10.1145/3067665.3067675)의 [소스코드](https://github.com/haraldott/dash)와 ns-3 내 quic을 구현한 ["A QUIC Implementation for ns-3"](https://arxiv.org/abs/1902.06121) 의 [소스코드](https://github.com/signetlabdei/quic-ns-3)를 활용하여 구현하였고 그를 통해 비디오 스트리밍 상황에서 TCP와 QUIC 사이의 성능을 분석하고 비교하였다.
 
-If you use the model, please reference "Simulation Framework for HTTP-Based Adaptive Streaming Applications" by Harald Ott, Konstantin Miller, and Adam Wolisz, 2017
+## 결과
+ 
+• 10, 50, 100Mbps 네트워크 설정 사용
 
-## NEEDED FILES
-Just drop the repository into the contrib/ folder of ns-3 (only works with ns version between 3.27 and 3.30)
+• 대부분의 지표는 큰 차이가 없었으나 DASH 알고리즘에 따라 성능 차이 확인
 
-Since I've already received a lot of questions about errors that arise from this mistake:
+• QUIC의 경우 시뮬레이션 초반 비디오 품질의 차이가 평균 품질에 영향, 최대 15%까지 달라짐.
 
-![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) !! DO NOT RENAME THE FOLDER !! ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) ![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) 
+• 특정 알고리즘의 경우 QUIC의 스트림 구조로 인해 좋지 않은 QoE로 이어짐.
 
-Its name needs to remain 'dash'
+![결과](https://github.com/highkim0914/paper/blob/main/ns-3-dev-ns-3.32/contrib/quicdash/result.jpg)
 
-## PROGRAM EXECUTION
-The following parameters have to be specified for program execution:
-- simulationId: The Id of this simulation, to distinguish it from others, with same algorithm and number of clients, for logging purposes.
-- numberOfClients: The number of streaming clients used for this simulation.
-- segmentDuration: The duration of a segment in microseconds.
-- adaptationAlgo: The name of the adaptation algorithm the client uses for the simulation. The 'pre-installed' algorithms are tobasco, festive and panda.
-- segmentSizeFile: The relative path (from the ns-3.x/ folder) of the file containing the sizes of the segments of the video. The segment sizes have to be provided as a (n, m) matrix, with n being the number of representation levels and m being the total number of segments. A two-segment long, three representations containing segment size file would look like the following:
-
- 1564 22394  
- 1627 46529  
- 1987 121606  
-
-One possible execution of the program would be:
-```bash
-./waf --run="tcp-stream --simulationId=1 --numberOfClients=3 --adaptationAlgo=panda --segmentDuration=2000000 --segmentSizeFile=contrib/dash/segmentSizes.txt"
-```
-
-
-## ADDING NEW ADAPTATION ALGORITHMS
-The adaptation algorithm base class is located in src/applications/model/adaptation-algorithm/. If it is desired to implement a new adaptation algorithm, a separate source and header file for the algorithm can be created in the adaptation-algorithm/ folder. An example of how a header file looks like can be seen here:
-
-```c++
-#ifndef NEW_ALGORITHM_H
-#define NEW_ALGORITHM_H
-
-#include "tcp-stream-adaptation-algorithm.h"
-
-namespace ns3 {
-/**
- * \ingroup tcpStream
- * \brief Implementation of a new adaptation algorithm
- */
-class NewAdaptationAlgorithm : public AdaptationAlgorithm
-{
-public:
-
-NewAdaptationAlgorithm ( const videoData &videoData,
-                         const playbackData & playbackData,
-			 const bufferData & bufferData,
-			 const throughputData & throughput );
-
-algorithmReply GetNextRep ( const int64_t segmentCounter );
-};
-} // namespace ns3
-#endif /* NEW_ALGORITHM_H */
-```
-
-An adaptation algorithm must return a data structure 'algorithmReply' containing the following members:
-
-```c++
-int64_t nextRepIndex; // representation level index of the next segement to be downloaded by the client
-int64_t nextDownloadDelay; // delay time in microseconds when the next segment shall be requested from the server
-int64_t decisionTime; // time in microsends when the adaptation algorithm decided which segment to download next, only for logging purposes
-int64_t decisionCase; // indicate in which part of the adaptation algorithm's code the decision was made, which representation level to request next, only for logging purposes
-int64_t delayDecisionCase; // indicate in which part of the adaptation algorithm's code the decision was made, how much time in microsends to wait until the segment shall be requested from server, only for logging purposes
-```
-
-Next, it is necessary to include the following lines to the top of the source file.
-
-```c++
-NS_LOG_COMPONENT_DEFINE ("NewAdaptationAlgorithm");
-NS_OBJECT_ENSURE_REGISTERED (NewAdaptationAlgorithm);
-```
-
-It is obligatory to inherit from AdaptationAlgorithm and implement the algorithmReply GetNextRep ( const int64_t segmentCounter ) function. Then, the header and source files need to be added to src/applications/wscript. Open wscript and add the files with their path, just like the other algorithm files have been added. Additionally, it is necessary to add the name of the algorithm to the if-else-if block in the TcpStreamClient::Initialise (std::string algorithm) function, just like the other implemented algorithms have been added, see the following code taken from tcp-stream-client.cc:
-
-```c++
-if (algorithm == "tobasco")
-  {
-    algo = new TobascoAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput);
-  }
-else if (algorithm == "panda")
-  {
-    algo = new PandaAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput);
-  }
-else if (algorithm == "festive")
-  {
-    algo = new FestiveAlgorithm (m_videoData, m_playbackData, m_bufferData, m_throughput);
-  }
-else
-  {
-    // Stop program
-  }
-```
-Lastly, the header file of the newly implemented adaptation algorithm needs to be included in the TcpStreamClient header file.
-
-The resulting logfiles will be written to mylogs/algorithmName/numberOfClients/
+• 추가 내용 [ppt](https://github.com/highkim0914/paper/edit/main/ns-3-dev-ns-3.32/contrib/quicdash/NS-3%EC%9D%84%20%ED%86%B5%ED%95%9C%20QUIC%20%ED%94%84%EB%A1%9C%ED%86%A0%EC%BD%9C%EC%9D%98%20%EB%B9%84%EB%94%94%EC%98%A4%20%EC%8A%A4%ED%8A%B8%EB%A6%AC%EB%B0%8D%20%EC%84%B1%EB%8A%A5.pptx)
