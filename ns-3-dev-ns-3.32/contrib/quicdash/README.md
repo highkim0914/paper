@@ -11,6 +11,6 @@
 
 • 특정 알고리즘의 경우 QUIC의 스트림 구조로 인해 좋지 않은 QoE로 이어짐.
 
-![결과](https://github.com/highkim0914/paper/blob/main/ns-3-dev-ns-3.32/contrib/quicdash/esult.jpg)
+![결과](https://github.com/highkim0914/paper/blob/main/ns-3-dev-ns-3.32/contrib/quicdash/Result.jpg)
 
 • 추가 내용 [ppt](https://github.com/highkim0914/paper/edit/main/ns-3-dev-ns-3.32/contrib/quicdash/NS-3%EC%9D%84%20%ED%86%B5%ED%95%9C%20QUIC%20%ED%94%84%EB%A1%9C%ED%86%A0%EC%BD%9C%EC%9D%98%20%EB%B9%84%EB%94%94%EC%98%A4%20%EC%8A%A4%ED%8A%B8%EB%A6%AC%EB%B0%8D%20%EC%84%B1%EB%8A%A5.pptx)
