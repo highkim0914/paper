@@ -1,0 +1,24 @@
+## -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+def build(bld):
+    module = bld.create_ns3_module('quicdash', ['internet','config-store','stats', 'quic'])
+    module.includes = '.'
+    module.source = [
+        'model/quic-stream-client.cc',
+        'model/quic-stream-server.cc',
+        'helper/quic-stream-helper.cc',
+        ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'quicdash'
+    headers.source = [
+        'model/quic-stream-client.h',
+        'model/quic-stream-server.h',
+        'model/quic-stream-interface.h',
+        'helper/quic-stream-helper.h',
+        ]
+
+    if bld.env['ENABLE_EXAMPLES']:
+        bld.recurse('examples')
+
+    bld.ns3_python_bindings()
